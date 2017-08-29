@@ -1,0 +1,124 @@
+<aura:component controller="VoiceRecordsPocController" implements="flexipage:availableForAllPageTypes">
+   	<!--Declare Attributes-->  
+   	<aura:attribute name="childAttribute" type="Id"/>   
+    <aura:attribute name="selectedItemsCount" type="integer" default="0"/>
+    
+    <aura:attribute name="ListOfVoiceLineItemBean" type="List" />
+    <aura:attribute name="billingGroupNames" type="List"/>
+    
+    <aura:attribute name="isEmptyRecord" type="boolean"/>
+    <aura:attribute name="displayErrorMessage" type="String"/>
+    <aura:attribute name="isDataDeleted" type="boolean"/>
+    <aura:attribute name="deleteMessage" type="String"/>
+    
+    <!--aura init handler , call js "loadContactList" function on component load, and display contact data on table-->   
+    <aura:handler name="init" value="{!this}" action="{!c.loadVoiceLineItems}"/>
+    
+    <!--Header part-->
+    <div class="slds-page-header">
+        <p class="slds-page-header__title slds-truncate" title="">Voice Line Items</p>
+        <span class="slds-badge">Selected Contact(s):{!v.selectedItemsCount}</span>
+        <div class="slds-grid slds-grid--align-end"> 
+            <button class="slds-button slds-button--brand" onclick="{!c.refreshVoiceLineItems}"> Refresh </button>
+            <button class="slds-button slds-button--brand" onclick="{!c.deleteSelectedItems}">Delete VoiceLineItem</button>
+        </div>
+    </div>
+	
+   	<!--
+	<aura:if isTrue="{!v.isEmptyRecord != null}">
+    <aura:if isTrue="{!v.isEmptyRecord}">
+    <div class="enter later">  
+    	<lightning:icon class="errorIcon" iconName="utility:error" size="x-small" alternativeText="sss" />
+      	<span class="errorText"> {!v.displayErrorMessage} </span>
+    </div>  
+    <aura:set attribute="else">
+    -->           
+	<!-- Display Records starts -->
+    <div class="slds-m-around--medium slds-form--stacked slds-scrollable--x">  
+    <!-- Populate contacts table --> 
+    <table id="billingTable" class="slds-table slds-table_bordered slds-table_cell-buffer">
+        <thead>
+            <tr class="slds-text-title_caps slds-theme_shade">
+                <th scope="col" style="width:3.25rem;" class="slds-text-align--right">
+                    <div class="slds-form-element">
+                        <div class="slds-form-element__control">
+                            <label class="slds-checkbox">
+                                <!-- Header checkbox for select all -->
+                                <ui:inputCheckbox aura:id="selectAllCheckBox" change="{!c.selectAll}"/> 
+								<span class="slds-checkbox--faux"></span>
+                                <span class="slds-form-element__label text"></span>
+                            </label>
+                        </div>
+                    </div>
+                </th>
+                <th scope="col">
+                    <span class="slds-truncate" title="id">Voice Line Item Id</span>      
+                </th>
+                <th scope="col">
+                    <span class="slds-truncate" title="Name">Billing Zone(s)</span>      
+                </th>
+                <th scope="col">
+                    <span class="slds-truncate" title="Last Name">Voice MT-OOB</span>
+                </th>
+                <aura:iteration items="{!v.billingGroupNames}" var="billingGroupName">
+                    <th scope="col">       
+                        <span class="slds-truncate" title="Department">{!billingGroupName}</span>
+                    </th>
+                </aura:iteration>
+            </tr>
+        </thead>
+        <!-- Table body start, Iterate contact list as a <tr> -->
+        <tbody>
+        	<aura:iteration items="{!v.ListOfVoiceLineItemBean}" var="VoiceLineItemBean"  indexVar="index">
+                <tr class="data" id="{!index}">
+                    <td style="width:3.25rem;">
+                		<div class="slds-form-element">
+                            <div class="slds-form-element__control">
+                                <label class="slds-checkbox">
+                                    <ui:inputCheckbox text="{!VoiceLineItemBean.voiceLineItemRecord.Id}" aura:id="boxPack" value="" change="{!c.checkboxSelect}"/>
+                                    <span class="slds-checkbox--faux"></span>
+                                    <span class="slds-form-element__label text"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <ui:outputText value="{!VoiceLineItemBean.voiceLineItemRecord.Id}" aura:Id="voiceLineItemId"/>
+                    </td>
+                    <td>
+                        <span class="slds-truncate">
+                            <ui:outputText value="{!VoiceLineItemBean.voiceLineItemRecord.Billing_Zone__r.Name}" />
+                        </span>
+                    </td>
+                    <td>
+                        <ui:outputText aura:id="voiceMTMin" value="{!VoiceLineItemBean.voiceLineItemRecord.Voice_MT_Min__c}" />
+                    </td>
+                    <aura:iteration items="{!VoiceLineItemBean.billingGroupValues}" var="billingGroupValue">
+                        <td>
+                             <ui:outputText value="{!billingGroupValue}" aura:Id="billingGroupValId"/>
+                        </td>
+                    </aura:iteration>
+                </tr>
+            </aura:iteration>
+        </tbody> 
+    </table>
+        
+    <!-- Display save related message --> 
+    <aura:if isTrue="{!v.isDataDeleted != null}">
+    	<aura:if isTrue="{!v.isDataDeleted}">
+        	<div class="slds-form-element__label slds-m-around--medium slds-form--stacked ">  
+            	<lightning:icon iconName="utility:success" size="x-small" alternativeText="sss"/>     
+                <span> {!v.deleteMessage} </span>
+          	</div>  
+            <aura:set attribute="else">
+            	<span class="errorText"> {!v.deleteMessage} </span>
+            </aura:set>
+        </aura:if>
+    </aura:if>    
+    </div>
+    <!--
+    </aura:set>
+    </aura:if>
+    </aura:if>
+	-->
+</aura:component>

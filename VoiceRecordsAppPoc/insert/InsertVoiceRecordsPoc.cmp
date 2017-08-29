@@ -1,0 +1,162 @@
+<aura:component controller="VoiceRecordsPocController" implements="flexipage:availableForAllPageTypes,force:hasRecordId" access="global">	
+    <!--First Add jQuery and Select2 plugin library from static resource Using ltng:require tag-->  
+    <ltng:require styles="{! $Resource.select2 + '/select2-4.0.3/dist/css/select2.min.css'}" 
+                  scripts="{!join(',', 
+                           $Resource.jquery224 ,  
+                           $Resource.select2 + '/select2-4.0.3/dist/js/select2.js')
+                           }" afterScriptsLoaded="{!c.scriptsLoaded}"/>
+    <ltng:require styles="{!$Resource.SLDS232 + '/assets/styles/salesforce-lightning-design-system.css'}"/>
+    
+    <!--Declare Attributes-->
+    <aura:attribute name="childAttribute" type="Id"/>
+   	<aura:attribute name="dataBeans" type="List"/>
+   	<aura:attribute name="billingGroupNames" type="List"/>
+    <aura:attribute name="options" type="List"/>
+    
+    <aura:attribute name="billingZoneRecs" type="List"/>
+    <aura:attribute name="billingGroupRecs" type="List"/>
+    
+    <aura:attribute name="selectedBillingZoneIds" type="List"/>
+    <aura:attribute name="selectedBillingGroupIds" type="List"/>
+    <aura:attribute name="selectedBillingZones" type="List"/>
+    <aura:attribute name="selectedBillingGroups" type="List"/>
+    
+    <aura:attribute name="billingZonesLimit" type="Integer" default='5' />
+    <aura:attribute name="billingGroupsLimit" type="Integer" default='2'/>
+    
+    <aura:attribute name="isInvalidSelection" type="boolean"/>
+    <aura:attribute name="invalidSelectionMessage" type="String"/>
+    
+    <aura:attribute name="recordId" type="Id" />
+    <aura:attribute name="voiceId" type="String" default='a0Z0n000000IaWbEAK'/> 
+    <aura:attribute name="voiceLineItems" type="List"/>
+
+    <aura:attribute name="isDataSaved" type="boolean"/>
+    <aura:attribute name="savedMessage" type="String"/>
+    
+    <aura:attribute name="isVoiceRecordExists" type="boolean" default="false" />
+    <aura:attribute name="existingVoiceRecordErrorMessage" type="String"/>
+    
+    <!--init handler event call "doInit" function on component load and fetch initial required values-->
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}"/>
+    
+    <!--Header part-->
+    <div class="slds-page-header">
+        <p class="slds-page-header__title slds-truncate" title="">Voice Line Items</p>
+    </div>
+    
+    <!--create form starts-->
+    <div class="slds-m-around--medium slds-form--stacked"> 
+        <div class="slds-form-element">
+            <label class="slds-form-element__label" for="lookup-348"> Billing Zone </label>
+            <select style="width:100%" id="billingZones" class="select2Class" multiple="multiple"
+                    onchange='validateLimit(this)'>
+                <aura:iteration items="{!v.billingZoneRecs}" var="billingZone">
+                    <option value="{!billingZone.Id}"> {!billingZone.Name} </option>
+                </aura:iteration>
+            </select>
+        </div>
+        
+        <!--for multi-select picklist [Billing Groups] -->    
+        <div class="slds-form-element">
+            <label class="slds-form-element__label" for="lookup-348"> Billing Group </label>
+            <select style="width:100%" id="billingGroups" class="select2Class" multiple="multiple">
+                <aura:iteration items="{!v.billingGroupRecs}" var="billingGroup">
+                    <option value="{!billingGroup.Id}"> {!billingGroup.Name} </option>
+                </aura:iteration>
+            </select>
+        </div>
+        
+        <!-- Populate and Display Billing Data Button -->    
+        <div class="slds-form-element">    
+            <lightning:button variant="brand" label="Create Table" onclick="{!c.populateBillingData}"/>
+        </div>        
+    </div> 
+    <!-- form ends -->
+    
+    <aura:if isTrue="{!v.isInvalidSelection != null}">
+        <aura:if isTrue="{!v.isInvalidSelection}">
+            <div class="slds-m-around--medium slds-form--stacked">  
+                <lightning:icon class="errorIcon" iconName="utility:error" size="x-small" alternativeText="sss"/>
+                <span class="errorText"> {!v.invalidSelectionMessage} </span>
+            </div>  
+            <aura:set attribute="else">
+                
+                <!-- Display Records starts -->
+                <div class="slds-m-around--medium slds-form--stacked slds-scrollable--x">  
+                    <table id="billingTable" class="slds-table slds-table_bordered slds-table_cell-buffer">
+                        <thead>
+                            <tr class="slds-text-title_caps slds-theme_shade">
+                                <th scope="col">
+                                    <div class="slds-truncate" title="Zone">Billing Zones</div>
+                                </th>         
+                                <aura:iteration items="{!v.selectedBillingGroups}" var="selectedBillingGroup">
+                                    <th scope="col" >
+                                        <div class="slds-truncate" title="BillingGroup" align="center"> {!selectedBillingGroup.Name} </div>
+                                    </th>
+                                </aura:iteration>
+                                <th>
+                                    <div class="slds-truncate" title="MT"> Voice MT-OOB </div>
+                                </th>                                 
+                                <th>
+                                    <div class="slds-truncate" title="MT"> Voice MT-Included services </div>
+                                </th> 
+                                <th>
+                                    <div class="slds-truncate" title="MT"> Voice Rounding </div>
+                                </th>                                 
+                            </tr>
+                        </thead>
+                        <tbody>   		
+                            <aura:iteration items="{!v.selectedBillingZones}" var="selectedZone" indexVar="index"> 
+                                <tr class="data" id="{!index}">
+                                    <td data-label="Zone" class="billingTableData">
+                                        <div class="slds-truncate" title="Zone"> {!selectedZone.Name} </div>
+                                    </td>
+                                    <aura:iteration items="{!v.selectedBillingGroups}" var="selectedGroup">
+                                        <td data-label="Zone" >
+                                            <input type="number" class="billingTableData" value="0.00" />
+                                        </td>                                        
+                                    </aura:iteration>
+                                    <td>
+                                        <input type="decimal" class="billingTableData" value="0.00" /><br/>
+                                    </td>
+                                    <td>
+                                        <input type="decimal" class="billingTableData" value="0.00" /><br/>
+                                    </td>
+                                    <td>
+                                        <select style="width:100%" class="billingTableData">
+                                            <aura:iteration items="{!v.options}" var="option">
+                                                <option value="{!option.value}"> {!option.value} </option>
+                                            </aura:iteration>
+                                        </select>                                        
+                                    </td>
+                                </tr>
+                            </aura:iteration>
+                        </tbody>
+                    </table>
+                </div>
+                <!-- Display Records ends -->
+                
+                <!-- Save Billing Data Button -->    
+                <div class="slds-m-around--medium slds-form--stacked">    
+                    <lightning:button variant="brand" label="Save" onclick="{!c.saveVoiceLineItems}" />
+                </div>
+                
+                <!-- Display save related message --> 
+                <aura:if isTrue="{!v.isDataSaved != null}">
+                    <aura:if isTrue="{!v.isDataSaved}">
+                        <div class="slds-form-element__label slds-m-around--medium slds-form--stacked ">  
+                            <lightning:icon iconName="utility:success" size="x-small" alternativeText="sss"/>     
+                            <span> {!v.savedMessage} </span>
+                        </div>  
+                        <aura:set attribute="else">
+                            <span class="errorText"> {!v.savedMessage} </span>
+                        </aura:set>
+                    </aura:if>
+                </aura:if>
+                
+            </aura:set>
+        </aura:if>
+    </aura:if>
+    
+</aura:component>

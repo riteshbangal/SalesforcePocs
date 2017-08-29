@@ -1,0 +1,18 @@
+<aura:component implements="flexipage:availableForAllPageTypes,force:hasRecordId" access="global">
+   	<aura:attribute name="voiceId" type="String" default='a0Z0n000000IaWbEAK'/> 
+    
+    <!-- Initialize handler event call "doInit" function on component load and fetch voiceId -->
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}"/>
+    
+    <lightning:tabset >
+        <lightning:tab label="Insert Voice Records">
+           <c:InsertVoiceRecordsPoc childAttribute="{!v.voiceId}" />
+        </lightning:tab>
+        <lightning:tab label="Update Voice Records">
+            <c:UpdateVoiceRecordsPoc childAttribute="{!v.voiceId}" />
+        </lightning:tab>
+        <lightning:tab label="Delete Voice Records">
+            <c:DeleteVoiceRecordsPoc childAttribute="{!v.voiceId}" />
+        </lightning:tab>
+    </lightning:tabset>
+</aura:component>
